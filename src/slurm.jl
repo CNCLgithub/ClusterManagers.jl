@@ -60,20 +60,23 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array,
 		jobID = String(ENV["SLURM_JOB_ID"])
         srun_cmd = `srun -J $jobname -n $np -o "$(joinpath(job_file_loc, "job-$jobID-%4t.out"))" -D $exehome $(srunargs) $exename $exeflags $(worker_arg())`
         srun_proc = open(srun_cmd)
+
         for i = 0:np - 1
             println("connecting to worker $(i + 1) out of $np")
             local w=[]
             fn = "$(joinpath(exehome, job_file_loc))/job-$jobID-$(lpad(i, 4, "0")).out"
             t0 = time()
             while true
-                if time() > t0 + 60 + np
-                    @warn "dropping worker: file not created in $(60 + np) seconds"
+                if time() > t0 + 5 + np
+                    @warn "dropping worker: file not created in $(5 + np) seconds"
                     break
                 end
                 sleep(0.001)
                 if isfile(fn) && filesize(fn) > 0
+                    sleep(3)
                     w = open(fn) do f
-                        return split(split(readline(f), ":")[2], "#")
+                        lines = readlines(f)
+                        return split(split(lines[3], ":")[2], "#")
                     end
                     break
                 end
