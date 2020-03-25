@@ -73,7 +73,11 @@ function launch(manager::SlurmManager, params::Dict, instances_arr::Array,
                 end
                 sleep(0.001)
                 if isfile(fn) && filesize(fn) > 0
-                    sleep(3)
+                    # waiting for the first worker
+                    # (other worker files should be written within this time)
+                    if i == 0
+                        sleep(3)
+                    end
                     w = open(fn) do f
                         lines = readlines(f)
                         return split(split(lines[3], ":")[2], "#")
